@@ -35,4 +35,32 @@ def dq_date_range(df, date_col, date_range:list):
 
 # COMMAND ----------
 
+def null_check_dq(df, column):
+    df_check = df.withColumn("Success",F.when(df[column].isNull() ,True).otherwise(False))
+    try:
+        assert not df_check.select(F.expr('any(Success == True)')).collect()[0][0], f"Uh oh! Mandatory column '{column}' is having null values: Failed"
+        print(f"All Items in the column '{column}' are not null: Passed")
+    except AssertionError as e:
+        raise e
+
+# COMMAND ----------
+
+def column_lowercase(df,columns:list):
+    for column in  columns:
+        df = df.withColumn(column, F.lower(col(column)))
+        
+    return df
+
+# COMMAND ----------
+
+def string_value_check_dq(df, column, values:list):
+    df_check = df.withColumn("Success",F.when(df[column].isin(values) ,True).otherwise(False))
+    try:
+        assert not df_check.select(F.expr('any(Success == False)')).collect()[0][0], f"Uh oh! Values in the Mandatory column :'{column}' are not accepted, Please refer values '{values}' Status: Failed"
+        print(f"All Items in the column '{column}' are valid Status: Passed")
+    except AssertionError as e:
+        raise e
+
+# COMMAND ----------
+
 
