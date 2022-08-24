@@ -1,0 +1,170 @@
+{
+    "configs": {
+        "jobs": [
+            {
+                "file_name": "file_name_1",
+                "active": true,
+                "env_suffix": "dev",
+                "audit": "db.audit_table",
+                "bronze": {
+                    "file_type": "json",
+                    "file_path": "dbfs://delta_hack/{env_suffix}/source/file_name_1/partition/",
+                    "schema": "dbfs://delta_hack/{env_suffix}/source/file_name_1/schema/schema.json",
+                    "quality_checks": {
+                        "column_name_1": "check_1",
+                        "column_name_2": "check_2",
+                        "column_name_3": "check_3"
+                    },
+                    "target_table_name": "bd.bronze_table_1",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/bronze/file_name_1/",
+                    "data_load_type": "incremental",
+                    "transformation": null,
+                    "source_table_name": null,
+                    "pipeline_type": "batch"
+                },
+                "silver": {
+                    "target_table_name": "bd.silver_table_1",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/silver/file_name_1/",
+                    "data_load_type": "full_refresh",
+                    "transformation": [
+                        {
+                            "select": "column_name_1",
+                            "new_name": "column_name_1_new",
+                            "cast": "int"
+                        },
+                        {
+                            "select": "column_name_2",
+                            "new_name": "column_name_2_new",
+                            "cast": "float"
+                        },
+                        {
+                            "select": "column_name_3",
+                            "new_name": "column_name_3_new",
+                            "cast": "date"
+                        }
+                    ],
+                    "source_table_name": "bd.bronze_table_1",
+                    "pipeline_type": "batch"
+                },
+                "gold": {
+                    "target_table_name": "bd.gold_table_1",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/gold/file_name_1/",
+                    "data_load_type": "incremental",
+                    "transformation": null,
+                    "source_table_name": "bd.silver_table_1",
+                    "pipeline_type": "batch"
+                }
+            },
+            {
+                "file_name": "file_name_3",
+                "active": false,
+                "env_suffix": "dev",
+                "audit": "db.audit_table",
+                "bronze": {
+                    "file_type": "json",
+                    "file_path": "dbfs://delta_hack/{env_suffix}/source/file_name_3/partition/",
+                    "schema": "dbfs://delta_hack/{env_suffix}/source/file_name_3/schema/schema.json",
+                    "quality_checks": {
+                        "column_name_1": "check_1",
+                        "column_name_2": "check_2",
+                        "column_name_3": "check_3"
+                    },
+                    "target_table_name": "bd.bronze_table_3",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/bronze/file_name_3/",
+                    "data_load_type": "incremental",
+                    "transformation": null,
+                    "source_table_name": null,
+                    "pipeline_type": "batch"
+                },
+                "silver": {
+                    "target_table_name": "bd.silver_table_3",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/silver/file_name_3/",
+                    "data_load_type": "full_refresh",
+                    "transformation": [
+                        {
+                            "select": "column_name_1",
+                            "new_name": "column_name_1_new",
+                            "cast": "int"
+                        },
+                        {
+                            "select": "column_name_2",
+                            "new_name": "column_name_2_new",
+                            "cast": "float"
+                        },
+                        {
+                            "select": "column_name_3",
+                            "new_name": "column_name_3_new",
+                            "cast": "date"
+                        }
+                    ],
+                    "source_table_name": "bd.bronze_table_3",
+                    "pipeline_type": "batch"
+                },
+                "gold": {
+                    "target_table_name": "bd.gold_table_3",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/gold/file_name_3/",
+                    "data_load_type": "incremental",
+                    "transformation": null,
+                    "source_table_name": "bd.silver_table_3",
+                    "pipeline_type": "batch"
+                }
+            }
+        ],
+        "dlt": [
+            {
+                "file_name": "file_name_2",
+                "active": true,
+                "env_suffix": "dev",
+                "audit": "db.audit_table",
+                "bronze": {
+                    "file_type": "parquet",
+                    "file_path": "dbfs://delta_hack/{env_suffix}/source/file_name_2/partition/",
+                    "schema": "dbfs://delta_hack/{env_suffix}/source/file_name_2/schema/schema.json",
+                    "quality_checks": {
+                        "column_name_1": "check_1",
+                        "column_name_2": "check_2",
+                        "column_name_3": "check_3"
+                    },
+                    "target_table_name": "bd.bronze_table_2",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/bronze/file_name_2/",
+                    "data_load_type": "incremental",
+                    "transformation": null,
+                    "source_table_name": null,
+                    "pipeline_type": "stream"
+                },
+                "silver": {
+                    "target_table_name": "bd.silver_table_2",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/silver/file_name_2/",
+                    "data_load_type": "incremental",
+                    "transformation": [
+                        {
+                            "select": "column_name_1",
+                            "new_name": "column_name_1_new",
+                            "cast": "int"
+                        },
+                        {
+                            "select": "column_name_2",
+                            "new_name": "column_name_2_new",
+                            "cast": "float"
+                        },
+                        {
+                            "select": "column_name_3",
+                            "new_name": "column_name_3_new",
+                            "cast": "date"
+                        }
+                    ],
+                    "source_table_name": "bd.bronze_table_2",
+                    "pipeline_type": "stream"
+                },
+                "gold": {
+                    "target_table_name": "bd.gold_table_2",
+                    "target_path": "dbfs://delta_hack/{env_suffix}/target/gold/file_name_2/",
+                    "data_load_type": "full_refresh",
+                    "transformation": null,
+                    "source_table_name": "bd.silver_table_2",
+                    "pipeline_type": "stream"
+                }
+            }
+        ]
+    }
+}

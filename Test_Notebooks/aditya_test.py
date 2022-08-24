@@ -1,17 +1,28 @@
 # Databricks notebook source
 # MAGIC %sql
-# MAGIC CREATE schema test_db2;
+# MAGIC CREATE DATABASE deltahack_prod;
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC -- DROP DATABASE test_dlt_db
+# MAGIC SHOW TABLES FROM deltahack_dev
 
 # COMMAND ----------
 
-with open('dbfs:/Workspace/Repos/DeltaHack/Databricks-deltahack/Config/ball_by_ball_config.txt') as f:
+# MAGIC %sql
+# MAGIC SELECT * FROM deltahack_dev.stg_match_status
+
+# COMMAND ----------
+
+with open('../Config/ball_by_ball_config.txt') as f:
     contents = f.read()
-    print(contents)
+    with open('dbfs:/Users/aditya.adkar@accenture.com/ball_by_ball_config.txt', 'w') as f2:
+        f2.write(contents)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC DESC FORMATTED test_dlt_db.ball_by_ball_bronze
 
 # COMMAND ----------
 
@@ -22,7 +33,7 @@ with open('dbfs:/Workspace/Repos/DeltaHack/Databricks-deltahack/Config/ball_by_b
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM test_dlt_db.ball_by_ball_gold
+# MAGIC SELECT * FROM test_dlt_db.ball_by_ball_bronze
 
 # COMMAND ----------
 
@@ -58,7 +69,18 @@ df.write.option("header",True).format("csv").mode('overwrite').save("/Users/adit
 
 # COMMAND ----------
 
-# MAGIC %fs ls dbfs:/Users/aditya.adkar@accenture.com/streaming_data/
+# MAGIC %fs ls dbfs:/pipelines/a8338f14-a1c4-41f1-acb0-9918b10fd022/system/events/
+
+# COMMAND ----------
+
+df_audit = spark.read.format("delta").load("dbfs:/pipelines/fd4f5d2d-a5fc-473d-818a-715b55289206/system/events/")
+display(df_audit)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE TABLE deltahack_dev.audit_table
+# MAGIC USING DELTA LOCATION 'dbfs:/pipelines/fd4f5d2d-a5fc-473d-818a-715b55289206/system/events/'
 
 # COMMAND ----------
 

@@ -1,4 +1,14 @@
 # Databricks notebook source
+import pyspark
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType,StructField, StringType, IntegerType 
+from pyspark.sql.types import ArrayType, DoubleType, BooleanType, DateType
+from pyspark.sql.functions import *
+from pyspark.sql import functions as F
+from datetime import datetime 
+
+# COMMAND ----------
+
 def dq_chk_greater(column_value:list,df):
     
     chk_df = df.withColumn("gt_range", column_value[1] < F.col(column_value[0])).filter(F.col('gt_range') == False).count()
@@ -60,6 +70,56 @@ def string_value_check_dq(df, column, values:list):
         print(f"All Items in the column '{column}' are valid Status: Passed")
     except AssertionError as e:
         raise e
+
+# COMMAND ----------
+
+def get_commit_no(table):
+    latestcommit = spark.sql(f"select max(_commit_version) from table_changes('{table}',1)")
+    return latestcommit.collect()[0][0]
+
+# COMMAND ----------
+
+def gen_name_shortcut(name):
+    sname = ""
+    for let in name.split(' '):
+        sname += let[0]
+    return sname
+
+udf_sname_gen = F.udf(lambda name:gen_name_shortcut(name), StringType())
+
+# COMMAND ----------
+
+dateparserfunc =  udf (lambda x: datetime.strptime(x, '%m/%d/%Y'), DateType())
+
+# COMMAND ----------
+
+def column_propcase(df,columns:list):
+    for column in  columns:
+        df = df.withColumn(column, F.initcap(F.col(column)))
+        
+    return df
+
+
+# COMMAND ----------
+
+def age_checker(df,column):
+    agedf = df.withColumn('age', (F.months_between(current_date(), F.col(column)) / 12).cast('int'))
+    agedf = agedf.withColumn("Success",F.when(agedf['age']>=16,True).otherwise(False))
+    
+    try:
+        assert agedf.select(F.expr('any(Success == True)')), f"Uh oh! players age is not above 16 years. He cannot registered : Failed"
+        print(f"Players can be sucessfully registered: Passed")
+    except AssertionError as e:
+        raise e
+    
+
+# COMMAND ----------
+
+def cast_type(df, columns_data_map:dict):
+    for col, dtype in columns_data_map.items():
+        df = df.withColumn(col, F.col(col).cast(dtype))
+    
+    return df
 
 # COMMAND ----------
 
