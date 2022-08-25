@@ -32,9 +32,14 @@ schema = StructType() \
 
 # COMMAND ----------
 
-df_bronze = spark.read.format(file_type) \
+try:
+    df_bronze = spark.read.format(file_type) \
       .schema(schema) \
       .load(file_path)
+except Exception as e:
+    print("Error: unable to load file")
+    excp = f" {e}"
+    audit_entry(db,process,excp,"unable to load file, Error: file not found")
 
 # COMMAND ----------
 
@@ -50,7 +55,12 @@ b_insert_query = f"""INSERT INTO {db}.stg_player TABLE bronze_palyer_dataset"""
 
 # COMMAND ----------
 
-spark.sql(b_insert_query)
+try:
+    spark.sql(b_insert_query)
+except Exception as e:
+    print("Error: unable to load table")
+    excp = f" {e}"
+    audit_entry(db,process,excp,"unable to load table, Error: table not found")
 
 # COMMAND ----------
 

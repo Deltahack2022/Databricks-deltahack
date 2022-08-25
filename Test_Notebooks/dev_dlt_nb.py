@@ -24,7 +24,6 @@ def ball_by_ball_bronze():
         spark.readStream
             .format("cloudFiles")
             .option("cloudfiles.format", "csv")
-#             .option("cloudFiles.inferColumnTypes", True)
             .load(f"{source_file_path}streaming_data/")
             .withColumnRenamed("MatcH_id", "match_id")
             .withColumnRenamed("Over_id", "over_id")
@@ -36,8 +35,6 @@ def ball_by_ball_bronze():
             .withColumnRenamed("Match_Date", "match_date")
             .withColumnRenamed("Season", "season")
     )
-# dbfs:/Users/aditya.adkar@accenture.com/    
-# file:/Workspace/Repos/DeltaHack/Databricks-deltahack/EDA_Data/Streaming/
 
 # COMMAND ----------
 

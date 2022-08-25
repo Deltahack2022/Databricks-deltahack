@@ -20,6 +20,7 @@ infer_schema = configs['infer_schema']
 first_row_is_header = configs['first_row_is_header']
 delimiter = configs['delimiter']
 db = configs['db']
+process = 'player_match'
 
 # COMMAND ----------
 
@@ -40,9 +41,14 @@ schema = StructType() \
 
 # COMMAND ----------
 
-df_bronze = spark.read.format(file_type) \
+try:
+    df_bronze = spark.read.format(file_type) \
       .options(header=first_row_is_header, delimiter=delimiter,inferSchema=infer_schema) \
       .load(file_path)
+except Exception as e:
+    print("Error: unable to load file")
+    excp = f" {e}"
+    audit_entry(db,process,excp,"unable to load file, Error: file not found")
 
 # COMMAND ----------
 
@@ -54,7 +60,12 @@ b_insert_query = f"""INSERT INTO {db}.stg_player_match TABLE bronze_player_match
 
 # COMMAND ----------
 
-spark.sql(b_insert_query)
+try:
+    spark.sql(b_insert_query)
+except Exception as e:
+    print("Error: unable to insert into stage table")
+    excp = f" {e}"
+    audit_entry(db,process,excp,"unable to load table, Error: table not found")
 
 # COMMAND ----------
 
@@ -62,10 +73,15 @@ commit_no = get_commit_no(f'{db}.stg_player_match')
 
 # COMMAND ----------
 
-bronze_player_match = spark.read.format("delta") \
+try:
+    bronze_player_match = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
                   .table(f'{db}.stg_player_match')
+except Exception as e:
+    print("Error: stage table not found")
+    excp = f" {e}"
+    audit_entry(db,process,excp,"unable to find table, Error: table not found")
 
 # COMMAND ----------
 
@@ -134,7 +150,12 @@ b.Opposit_keeper  )"""
 
 # COMMAND ----------
 
-spark.sql(s_merge_query)
+try:
+    spark.sql(s_merge_query)
+except Exception as e:
+    print("Error: unable to insert into table")
+    excp = f" {e}"
+    audit_entry(db,process,excp,"unable to load table, Error: table not found")
 
 # COMMAND ----------
 

@@ -11,4 +11,9 @@
 
 # COMMAND ----------
 
-insert into {db}.
+# MAGIC %sql
+# MAGIC select * from deltahack_dev.batch_audit_table;
+
+# COMMAND ----------
+
+

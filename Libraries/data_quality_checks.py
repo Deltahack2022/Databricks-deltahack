@@ -123,4 +123,10 @@ def cast_type(df, columns_data_map:dict):
 
 # COMMAND ----------
 
+def audit_entry(db,process,e,msg):
+    query = f"""insert into {db}.batch_audit_table (process,error,message,createtimestamp) values ('{process}', "{e}","{msg}",current_timestamp)"""
+    spark.sql(query)
 
+# COMMAND ----------
+
+ 

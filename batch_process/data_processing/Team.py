@@ -25,9 +25,11 @@ db = configs['db']
 try:
     df_bronze = spark.read.format(file_type) \
       .options(header=first_row_is_header, delimiter=delimiter,inferSchema=infer_schema) \
-      .load(file_path)
-except exception as e:
-    
+      .load(file_paths)
+except Exception as e:
+    print("Error: file not found")
+    excp = f" {e}"
+    audit_entry(db,"team",excp,"unable to read the file, Error: file not found error")
 
 # COMMAND ----------
 
@@ -36,7 +38,13 @@ df_bronze.createOrReplaceTempView("bronze_team_dataset")
 # COMMAND ----------
 
 B_insert_query = f"INSERT INTO {db}.stg_team TABLE bronze_team_dataset"
-spark.sql(B_insert_query)
+
+try:
+    spark.sql(B_insert_query)
+except Exception as e:
+    print("Error: unable to insert into stage table")
+    excp = f" {e}"
+    audit_entry(db,"team",excp,"unable to load table, Error: table not found")
 
 # COMMAND ----------
 
@@ -44,11 +52,16 @@ commit_no = get_commit_no(f'{db}.stg_team')
 
 # COMMAND ----------
 
-bronze_team = spark.read.format("delta") \
+try:
+    bronze_team = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
                   .table(f'{db}.stg_team') \
                   .where(col("_change_type") != "preimage")
+except Exception as e:
+    print("Error: stage table not found")
+    excp = f" {e}"
+    audit_entry(db,"team",excp,"unable to find table, Error: table not found")
 
 # COMMAND ----------
 
@@ -60,7 +73,12 @@ bronze_team = column_lowercase(bronze_team,['Team_Name'])
 
 # COMMAND ----------
 
-bronze_team = bronze_team.withColumn("sname", F.upper(udf_sname_gen(col('Team_Name'))))
+try:
+    bronze_team = bronze_team.withColumn("sname", F.upper(udf_sname_gen(col('Team_Name'))))
+except Exception as e:
+    print("Error: unable to process short name")
+    excp = f" {e}"
+    audit_entry(db,"team",excp,"unable to process, Error: column not found")
 
 # COMMAND ----------
 
@@ -81,7 +99,12 @@ WHEN NOT MATCHED
 
 # COMMAND ----------
 
-spark.sql(merge_query)
+try:
+    spark.sql(merge_query)
+except Exception as e:
+    print("Error: unable to marge into table")
+    excp = f" {e}"
+    audit_entry(db,"team",excp,"unable to load table, Error: table not found")
 
 # COMMAND ----------
 
