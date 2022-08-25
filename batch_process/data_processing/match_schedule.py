@@ -1,14 +1,22 @@
 # Databricks notebook source
+# MAGIC %run ../../Config/batch_configs/batch_configs
+
+# COMMAND ----------
+
 # MAGIC %run ../../Libraries/data_quality_checks
 
 # COMMAND ----------
 
-season = 2017
-file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
-file_name = f"match/{season}"
-file_path = file_location+"/"+file_name
-file_type = "parquet"
-db = 'dth_test_db'
+configs = match_schedule_configs
+
+# COMMAND ----------
+
+file_location = configs['file_location']
+file_type = configs["file_type"]
+file_name = configs['file_name']
+season = configs['season']
+file_path = file_location+"/"+file_name+"/"+season
+db = configs['db']
 
 # COMMAND ----------
 
@@ -33,14 +41,14 @@ spark.sql(b_insert_query)
 
 # COMMAND ----------
 
-commit_no = get_commit_no('dth_test_db.stg_match_schedule')
+commit_no = get_commit_no(f'{db}.stg_match_schedule')
 
 # COMMAND ----------
 
 bronze_match_sch = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
-                  .table('dth_test_db.stg_match_schedule')
+                  .table(f'{db}.stg_match_schedule')
 
 # COMMAND ----------
 
@@ -48,8 +56,20 @@ bronze_match_sch.createOrReplaceTempView("silver_match_sch_dataset")
 
 # COMMAND ----------
 
-s_inser_query = f"""
-INSERT INTO dth_test_db.match_schedule (match_id,
+s_merge_query = f"""
+Merge INTO {db}.match_schedule as a 
+using (select * from silver_match_sch_dataset) as b 
+on a.match_id= b.match_id
+when matched then 
+update set a.Team1 = b.Team1,
+a.Team2 = b.Team2,
+a.match_date = b.match_date,
+a.Season_Year = b.Season_Year,
+a.Venue_Name = b.Venue_Name,
+a.City_Name = b.City_Name,
+a.Country_Name = b.Country_Name
+when not matched then 
+insert (match_id,
 Team1 ,
 Team2 ,
 match_date ,
@@ -57,19 +77,18 @@ Season_Year ,
 Venue_Name ,
 City_Name ,
 Country_Name)
-SELECT match_id,
-Team1 ,
-Team2 ,
-match_date ,
-Season_Year ,
-Venue_Name ,
-City_Name ,
-Country_Name
-FROM silver_match_sch_dataset"""
+values ( b.match_id,
+b.Team1 ,
+b.Team2 ,
+b.match_date ,
+b.Season_Year ,
+b.Venue_Name ,
+b.City_Name ,
+b.Country_Name)"""
 
 # COMMAND ----------
 
-spark.sql(s_inser_query)
+spark.sql(s_merge_query)
 
 # COMMAND ----------
 

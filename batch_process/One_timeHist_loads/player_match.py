@@ -1,34 +1,25 @@
 # Databricks notebook source
+# MAGIC %run ../../Config/batch_configs/onetime_hist_configs
+
+# COMMAND ----------
+
 # MAGIC %run ../../Libraries/data_quality_checks
 
 # COMMAND ----------
 
-file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
-file_name = "Player_match/all"
-file_path = file_location+"/"+file_name
-file_type = "csv"
-
-infer_schema = "true"
-first_row_is_header = "true"
-delimiter = ","
-db = 'deltahack_dev'
+configs = player_match_configs
 
 # COMMAND ----------
 
-schema = StructType() \
-         .add("Match_Id",IntegerType(),False) \
-         .add("Player_Id",IntegerType(),False) \
-         .add("Role_Desc",StringType(),False) \
-         .add("Opposit_Team",StringType(),False) \
-         .add("Season_year",StringType(),False) \
-         .add("is_manofThematch",BooleanType(),False) \
-         .add("IsPlayers_Team_won",BooleanType(),False) \
-         .add("Batting_Status",StringType(),False) \
-         .add("Bowling_Status",StringType(),False) \
-         .add("Player_Captain",StringType(),False) \
-         .add("Opposit_captain",StringType(),False) \
-         .add("Player_keeper",StringType(),False) \
-         .add("Opposit_keeper",StringType(),False) 
+file_location = configs['file_location']
+file_type = configs["file_type"]
+file_name = configs['file_name']
+season = configs['season']
+file_path = file_location+"/"+file_name+"/"+season
+infer_schema = configs['infer_schema']
+first_row_is_header = configs['first_row_is_header']
+delimiter = configs['delimiter']
+db = configs['db']
 
 # COMMAND ----------
 
@@ -50,14 +41,14 @@ spark.sql(b_insert_query)
 
 # COMMAND ----------
 
-commit_no = get_commit_no('dth_test_db.stg_player_match')
+commit_no = get_commit_no(f'{db}.stg_player_match')
 
 # COMMAND ----------
 
 bronze_player_match = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
-                  .table('dth_test_db.stg_player_match')
+                  .table(f'{db}.stg_player_match')
 
 # COMMAND ----------
 
@@ -78,34 +69,38 @@ bronze_player_match.createOrReplaceTempView("silver_player_match_dataset")
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC INSERT INTO dth_test_db.player_match (Match_Id ,
-# MAGIC Player_Id ,
-# MAGIC Role_Desc ,
-# MAGIC Opposit_Team ,
-# MAGIC Season_year ,
-# MAGIC is_manofThematch ,
-# MAGIC IsPlayers_Team_won ,
-# MAGIC Batting_Status ,
-# MAGIC Bowling_Status ,
-# MAGIC Player_Captain ,
-# MAGIC Opposit_captain ,
-# MAGIC Player_keeper ,
-# MAGIC Opposit_keeper  )
-# MAGIC SELECT Match_Id ,
-# MAGIC Player_Id ,
-# MAGIC Role_Desc ,
-# MAGIC Opposit_Team ,
-# MAGIC Season_year ,
-# MAGIC is_manofThematch ,
-# MAGIC IsPlayers_Team_won ,
-# MAGIC Batting_Status ,
-# MAGIC Bowling_Status ,
-# MAGIC Player_Captain ,
-# MAGIC Opposit_captain ,
-# MAGIC Player_keeper ,
-# MAGIC Opposit_keeper  
-# MAGIC FROM silver_player_match_dataset
+s_insert_query = f"""
+INSERT INTO {db}.player_match (Match_Id ,
+Player_Id ,
+Role_Desc ,
+Opposit_Team ,
+Season_year ,
+is_manofThematch ,
+IsPlayers_Team_won ,
+Batting_Status ,
+Bowling_Status ,
+Player_Captain ,
+Opposit_captain ,
+Player_keeper ,
+Opposit_keeper  )
+SELECT Match_Id ,
+Player_Id ,
+Role_Desc ,
+Opposit_Team ,
+Season_year ,
+is_manofThematch ,
+IsPlayers_Team_won ,
+Batting_Status ,
+Bowling_Status ,
+Player_Captain ,
+Opposit_captain ,
+Player_keeper ,
+Opposit_keeper  
+FROM silver_player_match_dataset"""
+
+# COMMAND ----------
+
+spark.sql(s_insert_query)
 
 # COMMAND ----------
 

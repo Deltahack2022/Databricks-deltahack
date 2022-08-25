@@ -15,7 +15,6 @@ with open('/dbfs/FileStore/DeltaHack/schemas/ball_by_ball_schema.txt') as f:
 @dlt.table(
     comment = "This is a raw bronze ball_by_ball table",
     table_properties = {"quality": "bronze"},
-#     schema = ball_schema
 )
 @dlt.expect_or_drop("valid ball", F.col("Ball_id") <= "6" )
 @dlt.expect("valid match", "MatcH_id IS NOT NULL" )

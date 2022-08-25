@@ -1,14 +1,22 @@
 # Databricks notebook source
+# MAGIC %run ../../Config/batch_configs/batch_configs
+
+# COMMAND ----------
+
 # MAGIC %run ../../Libraries/data_quality_checks
 
 # COMMAND ----------
 
-season = 2017
-file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
-file_name = f"Player/{season}"
-file_path = file_location+"/"+file_name
-file_type = "json"
-db = 'deltahack_dev'
+configs = player_configs
+
+# COMMAND ----------
+
+file_location = configs['file_location']
+file_type = configs["file_type"]
+file_name = configs['file_name']
+season = configs['season']
+file_path = file_location+"/"+file_name+"/"+season
+db = configs['db']
 
 # COMMAND ----------
 
@@ -46,14 +54,14 @@ spark.sql(b_insert_query)
 
 # COMMAND ----------
 
-commit_no = get_commit_no('dth_test_db.stg_player')
+commit_no = get_commit_no(f'{db}.stg_player')
 
 # COMMAND ----------
 
 bronze_player = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
-                  .table('dth_test_db.stg_player')
+                  .table(f'{db}.stg_player')
 
 # COMMAND ----------
 
@@ -80,19 +88,19 @@ bronze_player.createOrReplaceTempView("silver_player_dataset")
 # COMMAND ----------
 
 merge_query = f"""
-MERGE INTO dth_test_db.Player as a
+MERGE INTO {db}.Player as a
 USING 
   (
-  SELECT b.player_id as mergekey,b.* FROM silver_player_dataset as b join dth_test_db.Player
-  on dth_test_db.Player.player_id = b.player_id
-  where _commit_version = {commit_no} and dth_test_db.Player.Player_team <> b.Player_team
+  SELECT b.player_id as mergekey,b.* FROM silver_player_dataset as b join {db}.Player
+  on {db}.Player.player_id = b.player_id
+  where _commit_version = {commit_no} and {db}.Player.Player_team <> b.Player_team
   
   Union all
   
   select Null as mergekey, b.*
-  from silver_player_dataset as b join dth_test_db.Player
-  on dth_test_db.Player.player_id = b.player_id
-  where _commit_version = {commit_no} and dth_test_db.Player.Player_team <> b.Player_team )
+  from silver_player_dataset as b join {db}.Player
+  on {db}.Player.player_id = b.player_id
+  where _commit_version = {commit_no} and {db}.Player.Player_team <> b.Player_team )
   as c
 ON a.Player_Id = mergekey
 WHEN MATCHED and a.player_team <> c.player_team THEN

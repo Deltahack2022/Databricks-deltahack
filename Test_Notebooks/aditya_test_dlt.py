@@ -7,7 +7,7 @@ import json
 # COMMAND ----------
 
 source_file_path = "dbfs:/Users/aditya.adkar@accenture.com/"
-with open('/dbfs/FileStore/DeltaHack/schemas/ball_by_ball_schema.txt') as f:
+with open('/Workspace/Repos/DeltaHack/Databricks-deltahack/Config/ball_by_ball_config.txt') as f:
     ball_schema = f.read()
 
 # COMMAND ----------
@@ -15,16 +15,16 @@ with open('/dbfs/FileStore/DeltaHack/schemas/ball_by_ball_schema.txt') as f:
 @dlt.table(
     comment = "This is a raw bronze ball_by_ball table",
     table_properties = {"quality": "bronze"},
-#     schema = ball_schema
+    schema = ball_schema
 )
-@dlt.expect_or_drop("valid ball", F.col("Ball_id") <= "6" )
+@dlt.expect_or_drop("valid ball", F.col("Ball_id") <= 6 )
 @dlt.expect("valid match", "MatcH_id IS NOT NULL" )
 def ball_by_ball_bronze():
     return(
         spark.readStream
             .format("cloudFiles")
             .option("cloudfiles.format", "csv")
-            .option("cloudFiles.inferColumnTypes", True)
+#             .option("cloudFiles.inferColumnTypes", True)
             .load(f"{source_file_path}streaming_data/")
             .withColumnRenamed("MatcH_id", "match_id")
             .withColumnRenamed("Over_id", "over_id")

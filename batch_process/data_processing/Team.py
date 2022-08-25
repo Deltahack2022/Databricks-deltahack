@@ -1,24 +1,33 @@
 # Databricks notebook source
+# MAGIC %run ../../Config/batch_configs/batch_configs
+
+# COMMAND ----------
+
 # MAGIC %run ../../Libraries/data_quality_checks
 
 # COMMAND ----------
 
-file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
-file_type = "csv"
-file_name = "Team-3.csv"
-file_path = file_location+"/"+file_name
-# dbfs:/FileStore/delta_hack/batch_process_data/Team-1.csv
-# CSV options
-infer_schema = "false"
-first_row_is_header = "true"
-delimiter = ","
-db = 'deltahack_dev'
+configs = team_configs
 
 # COMMAND ----------
 
-df_bronze = spark.read.format(file_type) \
+file_location = configs['file_location']
+file_type = configs["file_type"]
+file_name = configs['file_name']
+file_path = file_location+"/"+file_name
+infer_schema = configs['infer_schema']
+first_row_is_header = configs['first_row_is_header']
+delimiter = configs['delimiter']
+db = configs['db']
+
+# COMMAND ----------
+
+try:
+    df_bronze = spark.read.format(file_type) \
       .options(header=first_row_is_header, delimiter=delimiter,inferSchema=infer_schema) \
       .load(file_path)
+except exception as e:
+    
 
 # COMMAND ----------
 
@@ -31,14 +40,14 @@ spark.sql(B_insert_query)
 
 # COMMAND ----------
 
-commit_no = get_commit_no('dth_test_db.stg_team')
+commit_no = get_commit_no(f'{db}.stg_team')
 
 # COMMAND ----------
 
 bronze_team = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
-                  .table('dth_test_db.stg_team') \
+                  .table(f'{db}.stg_team') \
                   .where(col("_change_type") != "preimage")
 
 # COMMAND ----------
@@ -59,9 +68,9 @@ bronze_team.createOrReplaceTempView("silver_team_dataset")
 
 # COMMAND ----------
 
-merge_query = """MERGE INTO dth_test_db.Team as a
+merge_query = f"""MERGE INTO {db}.Team as a
 USING 
-  (SELECT * FROM silver_team_dataset where _commit_version = 5 )
+  (SELECT * FROM silver_team_dataset where _commit_version = {commit_no} )
   as b
 ON b.Team_Id = a.Team_Id
 WHEN MATCHED THEN

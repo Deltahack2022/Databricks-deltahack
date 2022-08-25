@@ -1,8 +1,4 @@
 # Databricks notebook source
-
-
-# COMMAND ----------
-
 # MAGIC %sql
 # MAGIC drop table if exists deltahack_dev.stg_team;
 # MAGIC CREATE OR REPLACE table deltahack_dev.stg_team (

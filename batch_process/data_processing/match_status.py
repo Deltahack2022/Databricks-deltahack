@@ -1,18 +1,25 @@
 # Databricks notebook source
+# MAGIC %run ../../Config/batch_configs/batch_configs
+
+# COMMAND ----------
+
 # MAGIC %run ../../Libraries/data_quality_checks
 
 # COMMAND ----------
 
-season = 2017
-file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
-file_name = f"match_status/{season}"
-file_path = file_location+"/"+file_name
-file_type = "csv"
+configs = match_status_configs
 
-infer_schema = "false"
-first_row_is_header = "true"
-delimiter = ","
-db = 'dth_test_db'
+# COMMAND ----------
+
+file_location = configs['file_location']
+file_type = configs["file_type"]
+file_name = configs['file_name']
+season = configs['season']
+file_path = file_location+"/"+file_name+"/"+season
+infer_schema = configs['infer_schema']
+first_row_is_header = configs['first_row_is_header']
+delimiter = configs['delimiter']
+db = configs['db']
 
 # COMMAND ----------
 
@@ -34,14 +41,14 @@ spark.sql(b_insert_query)
 
 # COMMAND ----------
 
-commit_no = get_commit_no('dth_test_db.stg_match_status')
+commit_no = get_commit_no(f'{db}.stg_match_status')
 
 # COMMAND ----------
 
 bronze_match_status = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
-                  .table('dth_test_db.stg_match_status')
+                  .table(f'{db}.stg_match_status')
 
 # COMMAND ----------
 
@@ -76,24 +83,40 @@ bronze_match_status.createOrReplaceTempView("silver_match_status_dataset")
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC INSERT INTO dth_test_db.match_status (match_id ,
-# MAGIC Toss_winner ,
-# MAGIC match_winner ,
-# MAGIC Toss_Name ,
-# MAGIC Win_Type ,
-# MAGIC Outcome_Type ,
-# MAGIC ManOfMach ,
-# MAGIC Win_Margin )
-# MAGIC SELECT match_id ,
-# MAGIC Toss_winner ,
-# MAGIC match_winner ,
-# MAGIC Toss_Name ,
-# MAGIC Win_Type ,
-# MAGIC Outcome_Type ,
-# MAGIC ManOfMach ,
-# MAGIC Win_Margin 
-# MAGIC FROM silver_match_status_dataset
+s_merge_query = f"""
+Merge INTO {db}.match_status as a using 
+(select * from silver_match_status_dataset) as b 
+on a.match_id = b.match_id
+when matched then 
+update set a.Toss_winner = b.Toss_winner,
+a.match_winner = b.match_winner,
+a.Toss_Name = b.Toss_Name,
+a.Win_Type = b.Win_Type,
+a.Outcome_Type = b.Outcome_Type,
+a.ManOfMach = b.ManOfMach ,
+a.Win_Margin = b.Win_Margin
+when not matched then insert 
+(match_id ,
+Toss_winner ,
+match_winner ,
+Toss_Name ,
+Win_Type ,
+Outcome_Type ,
+ManOfMach ,
+Win_Margin )
+VALUES (b.match_id ,
+b.Toss_winner ,
+b.match_winner ,
+b.Toss_Name ,
+b.Win_Type ,
+b.Outcome_Type ,
+b.ManOfMach ,
+b.Win_Margin 
+)"""
+
+# COMMAND ----------
+
+spark.sql(s_merge_query)
 
 # COMMAND ----------
 

@@ -1,14 +1,22 @@
 # Databricks notebook source
+# MAGIC %run ../../Config/batch_configs/onetime_hist_configs
+
+# COMMAND ----------
+
 # MAGIC %run ../../Libraries/data_quality_checks
 
 # COMMAND ----------
 
-season = 'all'
-file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
-file_name = f"match/{season}"
-file_path = file_location+"/"+file_name
-file_type = "parquet"
-db = 'deltahack_dev'
+configs = match_schedule_configs
+
+# COMMAND ----------
+
+file_location = configs['file_location']
+file_type = configs["file_type"]
+file_name = configs['file_name']
+season = configs['season']
+file_path = file_location+"/"+file_name+"/"+season
+db = configs['db']
 
 # COMMAND ----------
 
@@ -33,14 +41,14 @@ spark.sql(b_insert_query)
 
 # COMMAND ----------
 
-commit_no = get_commit_no('dth_test_db.stg_match_schedule')
+commit_no = get_commit_no(f'{db}.stg_match_schedule')
 
 # COMMAND ----------
 
 bronze_match_sch = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
-                  .table('dth_test_db.stg_match_schedule')
+                  .table(f'{db}.stg_match_schedule')
 
 # COMMAND ----------
 

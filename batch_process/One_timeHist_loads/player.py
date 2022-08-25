@@ -1,14 +1,29 @@
 # Databricks notebook source
+# MAGIC %run ../../Config/batch_configs/onetime_hist_configs
+
+# COMMAND ----------
+
 # MAGIC %run ../../Libraries/data_quality_checks
 
 # COMMAND ----------
 
-season = 'all'
-file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
-file_name = f"Player/{season}"
-file_path = file_location+"/"+file_name
-file_type = "json"
-db = 'deltahack_dev'
+configs = player_configs
+
+# COMMAND ----------
+
+# season = 'all'
+# file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
+# file_name = f"Player/{season}"
+# file_path = file_location+"/"+file_name
+# file_type = "json"
+# db = 'deltahack_dev'
+
+file_location = configs['file_location']
+file_type = configs["file_type"]
+file_name = configs['file_name']
+season = configs['season']
+file_path = file_location+"/"+file_name+"/"+season
+db = configs['db']
 
 # COMMAND ----------
 
@@ -46,14 +61,14 @@ spark.sql(b_insert_query)
 
 # COMMAND ----------
 
-commit_no = get_commit_no('dth_test_db.stg_player')
+commit_no = get_commit_no(f'{db}.stg_player')
 
 # COMMAND ----------
 
 bronze_player = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
-                  .table('dth_test_db.stg_player')
+                  .table(f'{db}.stg_player')
 
 # COMMAND ----------
 
@@ -79,7 +94,7 @@ bronze_player.createOrReplaceTempView("silver_player_dataset")
 
 # COMMAND ----------
 
-s_insert_query = f"""INSERT INTO dth_test_db.player (Player_Id, Player_Name, DOB,Batting_hand,Bowling_skill,Country_Name,Player_team,effc_start_dt,effc_end_dt)
+s_insert_query = f"""INSERT INTO {db}.player (Player_Id, Player_Name, DOB,Batting_hand,Bowling_skill,Country_Name,Player_team,effc_start_dt,effc_end_dt)
 SELECT Player_Id, Player_Name, DOB,Batting_hand,Bowling_skill,Country_Name,Player_team,effc_start_dt,effc_end_dt
 FROM silver_player_dataset where _commit_version = {commit_no}"""
 

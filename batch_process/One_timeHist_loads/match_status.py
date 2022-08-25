@@ -1,17 +1,25 @@
 # Databricks notebook source
+# MAGIC %run ../../Config/batch_configs/onetime_hist_configs
+
+# COMMAND ----------
+
 # MAGIC %run ../../Libraries/data_quality_checks
 
 # COMMAND ----------
 
-file_location = "dbfs:/FileStore/delta_hack/batch_process_data"
-file_name = "match_status/all"
-file_path = file_location+"/"+file_name
-file_type = "csv"
+configs = match_status_configs
 
-infer_schema = "false"
-first_row_is_header = "true"
-delimiter = ","
-db = 'deltahack_dev'
+# COMMAND ----------
+
+file_location = configs['file_location']
+file_type = configs["file_type"]
+file_name = configs['file_name']
+season = configs['season']
+file_path = file_location+"/"+file_name+"/"+season
+infer_schema = configs['infer_schema']
+first_row_is_header = configs['first_row_is_header']
+delimiter = configs['delimiter']
+db = configs['db']
 
 # COMMAND ----------
 
@@ -33,14 +41,14 @@ spark.sql(b_insert_query)
 
 # COMMAND ----------
 
-commit_no = get_commit_no('dth_test_db.stg_match_status')
+commit_no = get_commit_no(f'{db}.stg_match_status')
 
 # COMMAND ----------
 
 bronze_match_status = spark.read.format("delta") \
                   .option("readChangeFeed", "true") \
                   .option("startingVersion", commit_no) \
-                  .table('dth_test_db.stg_match_status')
+                  .table(f'{db}.stg_match_status')
 
 # COMMAND ----------
 

@@ -14,10 +14,11 @@
 
 # COMMAND ----------
 
-with open('../Config/ball_by_ball_config.txt') as f:
+with open('/Workspace/Repos/DeltaHack/Databricks-deltahack/Config/ball_by_ball_config.txt') as f:
+#     ../Config/ball_by_ball_config.txt
     contents = f.read()
-    with open('dbfs:/Users/aditya.adkar@accenture.com/ball_by_ball_config.txt', 'w') as f2:
-        f2.write(contents)
+#     with open('/dbfs/Users/aditya.adkar@accenture.com/ball_by_ball_config.txt', 'w') as f2:
+#         f2.write(contents)
 
 # COMMAND ----------
 
